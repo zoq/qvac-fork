@@ -38,13 +38,13 @@
       "runImageTest"
     ],
     "groupB": [
+      "runQwen35Test",
       "runGemma4Test",
       "runModelLoadingTest",
       "runMoeTest",
       "runMultiInstanceTest",
       "runOcrLightonTest",
       "runOcrPaddleTest",
-      "runQwen35Test",
       "runReasoningTest",
       "runSlidingContextTest",
       "runToolCallingTest",
