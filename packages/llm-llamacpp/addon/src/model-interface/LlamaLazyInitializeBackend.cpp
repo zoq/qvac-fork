@@ -64,6 +64,14 @@ bool LlamaLazyInitializeBackend::initialize(
   setenv("GGML_METAL_N_CB", "1", /*overwrite=*/0);
 #endif
 
+#if defined(__APPLE__) && defined(TARGET_OS_IOS) && TARGET_OS_IOS
+  // TEMPORARY DIAGNOSTIC (revert before merge): log every Metal graph node at
+  // encode time, with shapes, so the A18 GPU-hang kill site can be mapped to a
+  // node range / kernel from the Device Farm console log. The hang error names
+  // the failing command buffer index; the encode log names what it contained.
+  setenv("GGML_METAL_GRAPH_DEBUG", "2", /*overwrite=*/0);
+#endif
+
   if (!backendsDir.empty()) {
     std::filesystem::path backendsDirPath(backendsDir);
 #ifdef BACKENDS_SUBDIR
