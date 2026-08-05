@@ -69,7 +69,16 @@ bool LlamaLazyInitializeBackend::initialize(
   // encode time, with shapes, so the A18 GPU-hang kill site can be mapped to a
   // node range / kernel from the Device Farm console log. The hang error names
   // the failing command buffer index; the encode log names what it contained.
+  // Fusion decisions are logged too since the fused binary kernels changed in
+  // this fabric line and sit in the implicated node range.
   setenv("GGML_METAL_GRAPH_DEBUG", "2", /*overwrite=*/0);
+  setenv("GGML_METAL_FUSION_DEBUG", "1", /*overwrite=*/0);
+  QLOG_IF(
+      Priority::INFO,
+      std::string("diagnostic: GGML_METAL_GRAPH_DEBUG=") +
+          (getenv("GGML_METAL_GRAPH_DEBUG") ? getenv("GGML_METAL_GRAPH_DEBUG") : "<unset>") +
+          " GGML_METAL_FUSION_DEBUG=" +
+          (getenv("GGML_METAL_FUSION_DEBUG") ? getenv("GGML_METAL_FUSION_DEBUG") : "<unset>"));
 #endif
 
   if (!backendsDir.empty()) {
