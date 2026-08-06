@@ -58,10 +58,49 @@ function assertLossAndAccuracyAreFinite(t, result, modelId) {
   assertFiniteMetricIfPresent(t, stats, 'val_accuracy_uncertainty', modelId)
 }
 
+// TEMPORARY DIAGNOSTIC (revert with the GGML_METAL_GRAPH_DEBUG addon block):
+// mirror a bounded tail of the native Metal graph-debug capture into the
+// console every 2s. Device Farm only packages host-side files, and the wdio
+// crash flush pulls the console file even when a GPU hang kills the app; the
+// hang's watchdog delay (>2s) guarantees the final encoded nodes get mirrored
+// before death. Output is capped per tick so the mirror cannot flood the
+// console bridge (which crashed the app when the full firehose went through
+// it).
+function startMetalTailMirror() {
+  const fs = require('bare-fs')
+  const dir = proc.env.GGML_DIAG_LOG_DIR || path.join(os.homedir(), 'Documents')
+  const file = path.join(dir, 'metal_graph_debug.log')
+  const MAX_LINES_PER_TICK = 40
+  let offset = 0
+  const timer = setInterval(() => {
+    try {
+      const st = fs.statSync(file)
+      if (st.size <= offset) return
+      const deltaLen = Math.min(st.size - offset, 1 << 20)
+      const buf = Buffer.alloc(deltaLen)
+      const fd = fs.openSync(file, 'r')
+      fs.readSync(fd, buf, 0, deltaLen, st.size - deltaLen)
+      fs.closeSync(fd)
+      const skipped = st.size - offset - deltaLen
+      offset = st.size
+      const lines = buf.toString().split('\n').filter(Boolean)
+      const tail = lines.slice(-MAX_LINES_PER_TICK)
+      const dropped = lines.length - tail.length
+      if (skipped > 0 || dropped > 0) {
+        console.log(`[metal-tail] ...skipped ${skipped} bytes / ${dropped} lines...`)
+      }
+      for (const l of tail) console.log('[metal-tail] ' + l)
+    } catch {}
+  }, 2000)
+  return () => clearInterval(timer)
+}
+
 safeTest(
   'finetuning pause and resume',
   { timeout: PAUSE_RESUME_TIMEOUT_MS, skip: skipFinetuning },
   async (t) => {
+    const stopMetalTail = startMetalTailMirror()
+    try {
     for (const modelVariant of FINETUNE_MODELS) {
       if (modelVariant.skip) {
         t.comment(`[${modelVariant.id}] skipped on ${platform}-${arch}`)
@@ -306,6 +345,9 @@ safeTest(
         cleanupCheckpoints(checkpointDir)
       }
     }
+    } finally {
+      stopMetalTail()
+    }
   }
 )
 
@@ -313,6 +355,8 @@ safeTest(
   'cancel() stops finetuning and removes pause checkpoint',
   { timeout: PAUSE_RESUME_TIMEOUT_MS, skip: skipFinetuning },
   async (t) => {
+    const stopMetalTail = startMetalTailMirror()
+    t.teardown(stopMetalTail)
     const modelVariant = FINETUNE_MODELS[0]
     const [modelName, modelDir] = await ensureModel({
       modelName: modelVariant.name,
