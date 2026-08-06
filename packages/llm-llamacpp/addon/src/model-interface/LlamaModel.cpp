@@ -729,6 +729,12 @@ void LlamaModel::llamaLogCallback(
   // Line-buffered so a GPU-hang kill preserves the log up to the last
   // encoded node. On iOS the file lands in Documents, which Device Farm
   // packages into Customer_Artifacts.zip even when the app crashes.
+  //
+  // The file is deliberately named logcat_full.txt: the CI collect action
+  // (which runs from the base branch under pull_request_target and cannot
+  // be changed from this PR) already extracts that name from the customer
+  // artifacts, and iOS never produces a real logcat — so the existing rule
+  // retrieves this capture with no collision and no CI changes.
   if (getenv("GGML_METAL_GRAPH_DEBUG") != nullptr) {
     static FILE* diagFile = []() -> FILE* {
       std::string dir;
@@ -739,7 +745,7 @@ void LlamaModel::llamaLogCallback(
       } else {
         dir = ".";
       }
-      FILE* f = fopen((dir + "/metal_graph_debug.log").c_str(), "w");
+      FILE* f = fopen((dir + "/logcat_full.txt").c_str(), "w");
       if (f != nullptr) {
         setvbuf(f, nullptr, _IOLBF, 1 << 16);
       }
