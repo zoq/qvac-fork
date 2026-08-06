@@ -85,10 +85,7 @@ safeTest(
         gpu_layers: '999',
         ctx_size: '512',
         device: forceCpuDevice ? 'cpu' : 'gpu',
-        // TEMPORARY DIAGNOSTIC (revert with the GGML_METAL_GRAPH_DEBUG addon
-        // block): verbosity 3 lets GGML_LOG_LEVEL_DEBUG through so the Metal
-        // per-node graph log reaches the Device Farm console.
-        verbosity: '3'
+        verbosity: '2'
       }
 
       const model = new LlmLlamacpp({
@@ -338,8 +335,7 @@ safeTest(
         gpu_layers: '999',
         ctx_size: '512',
         device: forceCpuDevice ? 'cpu' : 'gpu',
-        // TEMPORARY DIAGNOSTIC: see note above.
-        verbosity: '3'
+        verbosity: '2'
       },
       logger: console,
       opts: { stats: true }

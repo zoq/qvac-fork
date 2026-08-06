@@ -202,6 +202,14 @@ runs:
                 cp "$logcat_full" "$CONSOLE_DIR/${device}_logcat_full.txt"
                 echo "  Extracted: ${device}_logcat_full.txt"
               fi
+              # TEMPORARY DIAGNOSTIC (A18 GPU-hang capture): the addon streams
+              # the Metal per-node graph log to this file, bypassing the JS
+              # console bridge; pick it up when present.
+              graph_debug=$(find "$tmpdir" -name "metal_graph_debug.log" -type f 2>/dev/null | head -1)
+              if [ -n "$graph_debug" ]; then
+                cp "$graph_debug" "$CONSOLE_DIR/${device}_metal_graph_debug.log"
+                echo "  Extracted: ${device}_metal_graph_debug.log"
+              fi
             fi
             rm -rf "$tmpdir"
           fi

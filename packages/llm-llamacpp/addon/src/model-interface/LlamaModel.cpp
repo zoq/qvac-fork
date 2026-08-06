@@ -721,6 +721,34 @@ void LlamaModel::llamaLogCallback(
   // Only log if the message priority is at or above the configured verbosity
   // level
   QLOG_IF(priority, string_format("[Llama.cpp] %s", text));
+
+  // TEMPORARY DIAGNOSTIC (revert with the GGML_METAL_GRAPH_DEBUG addon
+  // block): when Metal graph debugging is enabled, stream every fabric log
+  // line straight to a file, bypassing the JS console bridge — the per-node
+  // firehose crashes the mobile test app when routed through the console.
+  // Line-buffered so a GPU-hang kill preserves the log up to the last
+  // encoded node. On iOS the file lands in Documents, which Device Farm
+  // packages into Customer_Artifacts.zip even when the app crashes.
+  if (getenv("GGML_METAL_GRAPH_DEBUG") != nullptr) {
+    static FILE* diagFile = []() -> FILE* {
+      std::string dir;
+      if (const char* override = getenv("GGML_DIAG_LOG_DIR")) {
+        dir = override;
+      } else if (const char* home = getenv("HOME")) {
+        dir = std::string(home) + "/Documents";
+      } else {
+        dir = ".";
+      }
+      FILE* f = fopen((dir + "/metal_graph_debug.log").c_str(), "w");
+      if (f != nullptr) {
+        setvbuf(f, nullptr, _IOLBF, 1 << 16);
+      }
+      return f;
+    }();
+    if (diagFile != nullptr) {
+      fputs(text, diagFile);
+    }
+  }
 }
 
 void LlamaModel::cancel() const {
