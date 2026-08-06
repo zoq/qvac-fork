@@ -76,9 +76,11 @@ bool LlamaLazyInitializeBackend::initialize(
   QLOG_IF(
       Priority::INFO,
       std::string("diagnostic: GGML_METAL_GRAPH_DEBUG=") +
-          (getenv("GGML_METAL_GRAPH_DEBUG") ? getenv("GGML_METAL_GRAPH_DEBUG") : "<unset>") +
+          (getenv("GGML_METAL_GRAPH_DEBUG") ? getenv("GGML_METAL_GRAPH_DEBUG")
+                                            : "<unset>") +
           " GGML_METAL_FUSION_DEBUG=" +
-          (getenv("GGML_METAL_FUSION_DEBUG") ? getenv("GGML_METAL_FUSION_DEBUG") : "<unset>"));
+          (getenv("GGML_METAL_FUSION_DEBUG") ? getenv("GGML_METAL_FUSION_DEBUG")
+                                             : "<unset>"));
 #endif
 
   if (!backendsDir.empty()) {
